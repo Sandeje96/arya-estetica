@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { LeafDecoration } from "@/components/brand/LeafDecoration";
 import { ServiciosClient } from "@/components/public/ServiciosClient";

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { ArrowRight, Sparkles, Gift, Leaf, Star, Zap } from "lucide-react";
 import { LeafDecoration } from "@/components/brand/LeafDecoration";
