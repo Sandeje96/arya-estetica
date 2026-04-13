@@ -1,7 +1,4 @@
-// Solo cargar .env en desarrollo — en producción Railway inyecta las variables
-if (process.env.NODE_ENV !== "production") {
-  await import("dotenv/config");
-}
+import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import bcrypt from "bcryptjs";
