@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── Arya Estética — Custom tokens ──────────────────────────── */
+@theme inline {
+  /* Shadcn token mapping */
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:            var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary:            var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:          var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar:                    var(--sidebar);
+  --color-sidebar-foreground:         var(--sidebar-foreground);
+  --color-sidebar-primary:            var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent:             var(--sidebar-accent);
+  --color-sidebar-accent-foreground:  var(--sidebar-accent-foreground);
+  --color-sidebar-border:             var(--sidebar-border);
+  --color-sidebar-ring:               var(--sidebar-ring);
+
+  /* Arya brand colors — disponibles como bg-arya-green, text-arya-gold, etc. */
+  --color-arya-green-dark:  #4A5D3A;
+  --color-arya-green:       #6B7F4F;
+  --color-arya-green-soft:  #8A9B6E;
+  --color-arya-cream:       #F1EFE0;
+  --color-arya-cream-light: #F8F6EC;
+  --color-arya-gold:        #B8A668;
+  --color-arya-gold-soft:   #C8B97E;
+  --color-arya-text:        #3D3D3D;
+  --color-arya-text-muted:  #6B6B6B;
+
+  /* Tipografía */
+  --font-sans:    var(--font-inter);
+  --font-heading: var(--font-cormorant);
+  --font-mono:    var(--font-geist-mono);
+
+  /* Radius */
+  --radius-sm:  calc(var(--radius) * 0.6);
+  --radius-md:  calc(var(--radius) * 0.8);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ── Arya theme (light only — no dark mode) ─────────────────── */
+:root {
+  /* Shadcn semantic tokens → Arya palette */
+  --background:           #F1EFE0;
+  --foreground:           #3D3D3D;
+
+  --card:                 #F8F6EC;
+  --card-foreground:      #3D3D3D;
+
+  --popover:              #F8F6EC;
+  --popover-foreground:   #3D3D3D;
+
+  --primary:              #4A5D3A;
+  --primary-foreground:   #F8F6EC;
+
+  --secondary:            #F8F6EC;
+  --secondary-foreground: #4A5D3A;
+
+  --muted:                #EDE9D5;
+  --muted-foreground:     #6B6B6B;
+
+  --accent:               #B8A668;
+  --accent-foreground:    #F8F6EC;
+
+  --destructive:          oklch(0.577 0.245 27.325);
+
+  --border:               #D9D2B0;
+  --input:                #EDE9D5;
+  --ring:                 #6B7F4F;
+
+  /* Charts: tonos verdes y dorados para los gráficos */
+  --chart-1: #6B7F4F;
+  --chart-2: #B8A668;
+  --chart-3: #4A5D3A;
+  --chart-4: #C8B97E;
+  --chart-5: #8A9B6E;
+
+  --radius: 0.5rem;
+
+  /* Sidebar (panel admin) */
+  --sidebar:                    #4A5D3A;
+  --sidebar-foreground:         #F8F6EC;
+  --sidebar-primary:            #F8F6EC;
+  --sidebar-primary-foreground: #4A5D3A;
+  --sidebar-accent:             #6B7F4F;
+  --sidebar-accent-foreground:  #F8F6EC;
+  --sidebar-border:             #8A9B6E;
+  --sidebar-ring:               #B8A668;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-cormorant), Georgia, serif;
+  }
+}

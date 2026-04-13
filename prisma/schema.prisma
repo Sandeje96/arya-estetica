@@ -1,0 +1,150 @@
+// Arya Estética — Schema Prisma
+// Paso 2: modelos completos
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Catálogo de servicios ───────────────────────────────────────────────────
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // "capilar" | "peinados" | "cortes" | "combos" | "manos" | "pies" | "adicionales_unas" | "masoterapia" | "cosmetologia" | "maquillaje" | "alisados" | "alisados_sin_quimicos" | "depilacion"
+  basePrice   Int      // pesos argentinos enteros
+  description String?
+  imageUrl    String?
+  active      Boolean  @default(true)
+  isLaser     Boolean  @default(false) // true para servicios de jornada depilación
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointmentItems AppointmentItem[]
+  giftCardItems    GiftCardItem[]
+}
+
+// ─── Clientes ────────────────────────────────────────────────────────────────
+
+model Client {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  whatsapp  String   // formato +5493764xxxxxxx
+  createdAt DateTime @default(now())
+
+  appointments    Appointment[]
+  giftCardsBought GiftCard[]    @relation("buyer")
+}
+
+// ─── Turnos ──────────────────────────────────────────────────────────────────
+
+model Appointment {
+  id             String            @id @default(cuid())
+  clientId       String
+  client         Client            @relation(fields: [clientId], references: [id])
+  status         AppointmentStatus @default(PENDING)
+  scheduledAt    DateTime?         // null hasta que admin asigna fecha/hora
+  totalEstimated Int               // suma de basePrice al momento de solicitar
+  totalCharged   Int?              // lo que efectivamente cobró admin (al completar)
+  notes          String?
+  isLaserDay     Boolean           @default(false)
+  laserDayId     String?
+  laserDay       LaserDay?         @relation(fields: [laserDayId], references: [id])
+  reminder1DaySent  Boolean        @default(false)
+  reminderHoursSent Boolean        @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  items AppointmentItem[]
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model AppointmentItem {
+  id            String      @id @default(cuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service     @relation(fields: [serviceId], references: [id])
+  priceAtBooking Int
+  finalPrice     Int?       // editable por admin al completar
+}
+
+// ─── Jornadas de depilación láser ────────────────────────────────────────────
+
+model LaserDay {
+  id          String   @id @default(cuid())
+  date        DateTime
+  slots       Int      // cupos disponibles totales
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+}
+
+// ─── Gift Cards ───────────────────────────────────────────────────────────────
+
+model GiftCard {
+  id            String         @id @default(cuid())
+  code          String         @unique  // token aleatorio nanoid(12) para el QR
+  buyerId       String
+  buyer         Client         @relation("buyer", fields: [buyerId], references: [id])
+  recipientName String
+  totalAmount   Int
+  status        GiftCardStatus @default(PENDING_PICKUP)
+  pdfUrl        String?
+  redeemedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  items GiftCardItem[]
+}
+
+enum GiftCardStatus {
+  PENDING_PICKUP  // comprada, esperando pago y retiro
+  READY           // impresa y entregada (se contabiliza como ingreso)
+  REDEEMED        // canjeada en el local
+  CANCELLED
+}
+
+model GiftCardItem {
+  id              String   @id @default(cuid())
+  giftCardId      String
+  giftCard        GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  serviceId       String
+  service         Service  @relation(fields: [serviceId], references: [id])
+  priceAtPurchase Int
+}
+
+// ─── Finanzas ─────────────────────────────────────────────────────────────────
+
+model Expense {
+  id          String   @id @default(cuid())
+  amount      Int
+  category    String   // "alquiler" | "insumos" | "sueldos" | "marketing" | "servicios" | "impuestos" | "otros" | custom
+  description String?
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
