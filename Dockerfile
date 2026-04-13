@@ -9,10 +9,11 @@ RUN npm ci
 COPY . .
 
 # Generar el cliente Prisma y buildear Next.js
-# prisma migrate deploy NO va aquí: necesita DATABASE_URL que solo existe en runtime
 RUN npx prisma generate && npx next build
+
+# Script de arranque
+RUN chmod +x start.sh
 
 EXPOSE 3000
 
-# Al iniciar: migrar primero, luego arrancar
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+CMD ["sh", "start.sh"]
