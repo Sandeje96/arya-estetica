@@ -38,7 +38,7 @@ async function getStats(now: Date) {
             scheduledAt: { gte: weekStart, lte: weekEnd },
           },
         }),
-        db.client.count(),
+        db.client.count({ where: { appointments: { some: {} } } }),
         db.appointment.aggregate({
           _sum: { totalCharged: true },
           where: { status: "COMPLETED", scheduledAt: { gte: monthStart, lte: monthEnd } },
