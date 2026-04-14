@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/formatting";
+import { formatTimeAR } from "@/lib/dates";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -223,7 +224,7 @@ export default async function FinanzasPage({ searchParams }: PageProps) {
                     </p>
                     {appt.scheduledAt && (
                       <p className="font-sans text-[11px] text-arya-text-muted/60 mt-0.5">
-                        {format(appt.scheduledAt, "d MMM HH:mm", { locale: es })}
+                        {format(appt.scheduledAt, "d MMM", { locale: es })} {formatTimeAR(appt.scheduledAt)}
                       </p>
                     )}
                   </div>

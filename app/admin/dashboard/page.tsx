@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { RemindersWidget, type PendingReminder } from "@/components/admin/RemindersWidget";
 import { formatPrice } from "@/lib/formatting";
+import { formatTimeAR, formatDateShortAR, isTodayAR } from "@/lib/dates";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -153,11 +154,11 @@ export default async function DashboardPage() {
     clientName: `${a.client.firstName} ${a.client.lastName}`,
     scheduledAt: a.scheduledAt!.toISOString(),
     services: a.items.map((i) => i.service.name),
-    isToday:  a.scheduledAt!.toDateString() === now.toDateString(),
-    dayLabel: a.scheduledAt!.toDateString() === now.toDateString()
+    isToday:  isTodayAR(a.scheduledAt!),
+    dayLabel: isTodayAR(a.scheduledAt!)
       ? "Hoy"
-      : format(a.scheduledAt!, "EEEE d/M", { locale: es }),
-    timeLabel: format(a.scheduledAt!, "HH:mm"),
+      : formatDateShortAR(a.scheduledAt!),
+    timeLabel: formatTimeAR(a.scheduledAt!),
   }));
 
   const monthLabel = format(now, "MMMM yyyy", { locale: es });
