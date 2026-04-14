@@ -1,18 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Minus } from "lucide-react";
 import { useCart } from "./CartProvider";
 import { formatPrice } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 
 interface ServiceCardProps {
-  id: string;
-  name: string;
-  category: string;
-  basePrice: number;
+  id:          string;
+  name:        string;
+  category:    string;
+  basePrice:   number;
   description?: string | null;
-  imageUrl?: string | null;
+  imageUrl?:   string | null;
+  maxQty?:     number;   // si > 1, permite agregar varias veces
 }
 
 export function ServiceCard({
@@ -22,15 +23,36 @@ export function ServiceCard({
   basePrice,
   description,
   imageUrl,
+  maxQty = 1,
 }: ServiceCardProps) {
-  const { add, remove, has } = useCart();
-  const inCart = has(id);
+  const { add, remove, has, countOf, items } = useCart();
 
-  const toggle = () => {
+  const qty    = countOf(id);
+  const inCart = qty > 0;
+  const multi  = maxQty > 1;
+
+  const handleAdd = () => {
+    if (qty >= maxQty) return;
+    // ID único por instancia: serviceId para la primera, serviceId_N para las siguientes
+    const instanceId = qty === 0 ? id : `${id}_${qty + 1}`;
+    add({ id: instanceId, serviceId: id, name, category, price: basePrice });
+  };
+
+  const handleRemove = () => {
+    if (qty === 0) return;
+    // Eliminar la última instancia agregada
+    const instances = items.filter((i) => i.serviceId === id);
+    const last = instances[instances.length - 1];
+    if (last) remove(last.id);
+  };
+
+  // Para servicios normales (maxQty=1), toggle
+  const handleToggle = () => {
     if (inCart) {
-      remove(id);
+      const inst = items.find((i) => i.serviceId === id);
+      if (inst) remove(inst.id);
     } else {
-      add({ id, name, category, price: basePrice });
+      add({ id, serviceId: id, name, category, price: basePrice });
     }
   };
 
@@ -72,29 +94,61 @@ export function ServiceCard({
           <span className="font-heading text-xl font-light text-arya-text">
             {formatPrice(basePrice)}
           </span>
-          <button
-            onClick={toggle}
-            aria-pressed={inCart}
-            aria-label={inCart ? `Quitar ${name} del carrito` : `Agregar ${name} al carrito`}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-all",
-              inCart
-                ? "bg-arya-green text-arya-cream hover:bg-arya-green-soft"
-                : "bg-arya-green-dark text-arya-cream hover:bg-arya-green"
-            )}
-          >
-            {inCart ? (
-              <>
-                <Check size={13} aria-hidden />
-                Agregado
-              </>
-            ) : (
-              <>
+
+          {multi ? (
+            /* Controles de cantidad */
+            <div className="flex items-center gap-1">
+              {qty > 0 && (
+                <button
+                  onClick={handleRemove}
+                  aria-label={`Quitar una unidad de ${name}`}
+                  className="w-7 h-7 flex items-center justify-center rounded-md bg-arya-green-dark text-arya-cream hover:bg-arya-green transition-colors"
+                >
+                  <Minus size={12} aria-hidden />
+                </button>
+              )}
+              {qty > 0 && (
+                <span className="font-sans text-sm font-medium text-arya-green-dark min-w-[1.5rem] text-center">
+                  {qty}
+                </span>
+              )}
+              <button
+                onClick={handleAdd}
+                disabled={qty >= maxQty}
+                aria-label={`Agregar ${name} al carrito`}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-all",
+                  qty >= maxQty
+                    ? "bg-arya-green/40 text-arya-cream cursor-not-allowed"
+                    : qty > 0
+                      ? "bg-arya-green text-arya-cream hover:bg-arya-green-soft"
+                      : "bg-arya-green-dark text-arya-cream hover:bg-arya-green"
+                )}
+              >
                 <Plus size={13} aria-hidden />
-                Agregar
-              </>
-            )}
-          </button>
+                {qty === 0 ? "Agregar" : qty >= maxQty ? `Máx. ${maxQty}` : "Agregar"}
+              </button>
+            </div>
+          ) : (
+            /* Botón toggle normal */
+            <button
+              onClick={handleToggle}
+              aria-pressed={inCart}
+              aria-label={inCart ? `Quitar ${name} del carrito` : `Agregar ${name} al carrito`}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-all",
+                inCart
+                  ? "bg-arya-green text-arya-cream hover:bg-arya-green-soft"
+                  : "bg-arya-green-dark text-arya-cream hover:bg-arya-green"
+              )}
+            >
+              {inCart ? (
+                <><Check size={13} aria-hidden />Agregado</>
+              ) : (
+                <><Plus size={13} aria-hidden />Agregar</>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </article>

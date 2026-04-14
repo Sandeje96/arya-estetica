@@ -7,6 +7,9 @@ import { CartSidebar, CartMobile } from "./Cart";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 
+// Servicios que se pueden agregar más de una vez al carrito (hasta 5)
+const MULTI_QTY_NAMES = ["diseño por cada par", "reconstrucción de uña"];
+
 interface Service {
   id: string;
   name: string;
@@ -135,6 +138,7 @@ export function ServiciosClient({ services, hasActiveLaserDay }: ServiciosClient
                     basePrice={svc.basePrice}
                     description={svc.description}
                     imageUrl={svc.imageUrl}
+                    maxQty={MULTI_QTY_NAMES.some((n) => svc.name.toLowerCase().includes(n)) ? 5 : 1}
                   />
                 ))}
               </div>

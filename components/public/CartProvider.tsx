@@ -12,10 +12,11 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface CartItem {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
+  id:        string;   // instancia única en el carrito (serviceId o serviceId_N)
+  serviceId: string;   // ID del servicio en DB
+  name:      string;
+  category:  string;
+  price:     number;
 }
 
 interface CartState {
@@ -23,19 +24,20 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: "ADD"; item: CartItem }
-  | { type: "REMOVE"; id: string }
+  | { type: "ADD";     item: CartItem }
+  | { type: "REMOVE";  id: string }
   | { type: "CLEAR" }
   | { type: "HYDRATE"; items: CartItem[] };
 
 interface CartContextValue {
-  items: CartItem[];
-  total: number;
-  count: number;
-  add: (item: CartItem) => void;
-  remove: (id: string) => void;
-  clear: () => void;
-  has: (id: string) => boolean;
+  items:    CartItem[];
+  total:    number;
+  count:    number;
+  add:      (item: CartItem) => void;
+  remove:   (id: string) => void;
+  clear:    () => void;
+  has:      (serviceId: string) => boolean;
+  countOf:  (serviceId: string) => number;
 }
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -43,7 +45,7 @@ interface CartContextValue {
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD":
-      // No duplicar el mismo servicio
+      // El ID de la instancia ya viene calculado desde afuera (único)
       if (state.items.some((i) => i.id === action.item.id)) return state;
       return { items: [...state.items, action.item] };
     case "REMOVE":
@@ -51,7 +53,13 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "CLEAR":
       return { items: [] };
     case "HYDRATE":
-      return { items: action.items };
+      // Compatibilidad con items viejos sin serviceId
+      return {
+        items: action.items.map((i) => ({
+          ...i,
+          serviceId: i.serviceId ?? i.id,
+        })),
+      };
     default:
       return state;
   }
@@ -76,7 +84,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch {
-      // localStorage puede no estar disponible (SSR, incognito)
+      // localStorage puede no estar disponible
     }
   }, []);
 
@@ -89,16 +97,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [state.items]);
 
-  const add = useCallback((item: CartItem) => dispatch({ type: "ADD", item }), []);
-  const remove = useCallback((id: string) => dispatch({ type: "REMOVE", id }), []);
-  const clear = useCallback(() => dispatch({ type: "CLEAR" }), []);
-  const has = useCallback((id: string) => state.items.some((i) => i.id === id), [state.items]);
+  const add    = useCallback((item: CartItem) => dispatch({ type: "ADD",    item }), []);
+  const remove = useCallback((id: string)     => dispatch({ type: "REMOVE", id   }), []);
+  const clear  = useCallback(()               => dispatch({ type: "CLEAR"        }), []);
+
+  const has     = useCallback((serviceId: string) =>
+    state.items.some((i) => i.serviceId === serviceId), [state.items]);
+  const countOf = useCallback((serviceId: string) =>
+    state.items.filter((i) => i.serviceId === serviceId).length, [state.items]);
 
   const total = state.items.reduce((sum, i) => sum + i.price, 0);
 
   return (
     <CartContext.Provider
-      value={{ items: state.items, total, count: state.items.length, add, remove, clear, has }}
+      value={{ items: state.items, total, count: state.items.length, add, remove, clear, has, countOf }}
     >
       {children}
     </CartContext.Provider>
