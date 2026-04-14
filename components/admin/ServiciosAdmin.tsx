@@ -30,6 +30,7 @@ export const CATEGORIES: Record<string, string> = {
   masoterapia:          "Masoterapia",
   cosmetologia:         "Cosmetología",
   maquillaje:           "Maquillaje",
+  miradas:              "Miradas",
   alisados:             "Alisados tradicionales",
   alisados_sin_quimicos:"Alisados sin químicos",
   depilacion:           "Depilación láser",
