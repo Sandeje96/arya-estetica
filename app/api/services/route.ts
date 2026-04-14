@@ -7,7 +7,7 @@ const createSchema = z.object({
   name:        z.string().min(1).max(200).trim(),
   category:    z.string().min(1).max(60).trim(),
   basePrice:   z.number().int().min(0),
-  description: z.string().max(500).trim().optional(),
+  description: z.string().max(500).trim().nullable().optional(),
   isLaser:     z.boolean().optional(),
 });
 
