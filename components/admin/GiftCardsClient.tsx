@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Search,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { formatPrice } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
@@ -111,11 +112,23 @@ export function GiftCardsClient({ giftCards: initial }: Props) {
   const [cards, setCards]         = useState(initial);
   const [search, setSearch]       = useState("");
   const [statusFilter, setFilter] = useState<GiftCardStatus | "ALL">("ALL");
+  const [deletingId,  setDeletingId]  = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const handleReady = (code: string) => {
     setCards((prev) =>
       prev.map((c) => (c.code === code ? { ...c, status: "READY" as const } : c))
     );
+  };
+
+  const handleDelete = (card: GiftCardRow) => {
+    if (!confirm(`¿Eliminar la gift card para "${card.recipientName}"? Esta acción no se puede deshacer.`)) return;
+    setDeletingId(card.id);
+    startTransition(async () => {
+      const res = await fetch(`/api/gift-cards/${card.code}`, { method: "DELETE" });
+      if (res.ok) setCards((prev) => prev.filter((c) => c.id !== card.id));
+      setDeletingId(null);
+    });
   };
 
   const normalize = (str: string) =>
@@ -239,6 +252,18 @@ export function GiftCardsClient({ giftCards: initial }: Props) {
                     <ExternalLink size={11} aria-hidden />
                     Ver
                   </a>
+
+                  {/* Eliminar */}
+                  <button
+                    onClick={() => handleDelete(card)}
+                    disabled={deletingId === card.id}
+                    className="p-1.5 rounded-lg border border-arya-gold/30 text-arya-text-muted hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 transition-colors disabled:opacity-50"
+                    title="Eliminar gift card"
+                  >
+                    {deletingId === card.id
+                      ? <Loader2 size={13} className="animate-spin" aria-hidden />
+                      : <Trash2 size={13} aria-hidden />}
+                  </button>
                 </div>
               </div>
             ))}
