@@ -32,6 +32,31 @@ const patchSchema = z.discriminatedUnion("action", [
   cancelSchema,
 ]);
 
+// ─── DELETE /api/appointments/[id] ───────────────────────────────────────────
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  const { id } = await params;
+
+  try {
+    const appt = await db.appointment.findUnique({ where: { id }, select: { status: true } });
+    if (!appt) return NextResponse.json({ error: "Turno no encontrado" }, { status: 404 });
+    if (appt.status !== "CANCELLED") {
+      return NextResponse.json({ error: "Solo se pueden eliminar turnos cancelados" }, { status: 409 });
+    }
+    await db.appointment.delete({ where: { id } });
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    console.error(`[DELETE /api/appointments/${id}]`, error);
+    return NextResponse.json({ error: "Error al eliminar el turno" }, { status: 500 });
+  }
+}
+
 // ─── PATCH /api/appointments/[id] ─────────────────────────────────────────────
 
 export async function PATCH(

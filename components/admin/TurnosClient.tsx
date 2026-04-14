@@ -12,6 +12,8 @@ import {
   ChevronUp,
   CalendarDays,
   Clock,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -50,6 +52,7 @@ type Modal =
   | { type: "confirm"; appointment: Appointment }
   | { type: "complete"; appointment: Appointment }
   | { type: "cancel"; appointment: Appointment }
+  | { type: "delete"; appointment: Appointment }
   | null;
 
 const STATUS_LABELS: Record<string, string> = {
@@ -185,6 +188,16 @@ function AppointmentRow({
               >
                 <XCircle size={12} aria-hidden />
                 <span className="hidden sm:inline">Cancelar</span>
+              </button>
+            )}
+            {appt.status === "CANCELLED" && (
+              <button
+                onClick={() => onAction({ type: "delete", appointment: appt })}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-destructive/20 text-destructive text-xs font-sans hover:bg-destructive/8 transition-colors"
+                title="Eliminar turno cancelado"
+              >
+                <Trash2 size={12} aria-hidden />
+                <span className="hidden sm:inline">Eliminar</span>
               </button>
             )}
           </div>
@@ -376,6 +389,82 @@ export function TurnosClient({ appointments: initial }: { appointments: Appointm
           onSuccess={handleSuccess}
         />
       )}
+      {modal?.type === "delete" && (
+        <DeleteCancelledModal
+          appointment={modal.appointment}
+          onClose={() => setModal(null)}
+          onDeleted={(id) => {
+            setAppointments((prev) => prev.filter((a) => a.id !== id));
+            setModal(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Modal confirmación de eliminación ───────────────────────────────────────
+
+function DeleteCancelledModal({
+  appointment,
+  onClose,
+  onDeleted,
+}: {
+  appointment: Appointment;
+  onClose: () => void;
+  onDeleted: (id: string) => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const clientName = `${appointment.client.firstName} ${appointment.client.lastName}`;
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      const res = await fetch(`/api/appointments/${appointment.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json();
+        setError(d.error ?? "Error al eliminar.");
+        return;
+      }
+      onDeleted(appointment.id);
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40" onClick={onClose}>
+      <div
+        className="w-full sm:max-w-sm bg-arya-cream rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-arya-gold/20 bg-arya-cream-light flex items-center justify-between">
+          <h2 className="font-heading text-lg font-light text-arya-green-dark">Eliminar turno</h2>
+          <button onClick={onClose} className="p-1.5 rounded text-arya-text-muted/50 hover:text-arya-text-muted hover:bg-arya-gold/10 transition-colors">
+            <XCircle size={16} />
+          </button>
+        </div>
+        <div className="px-5 py-5 flex flex-col gap-4">
+          <p className="font-sans text-sm text-arya-text">
+            ¿Eliminar el turno cancelado de <strong>{clientName}</strong>? Esta acción no se puede deshacer.
+          </p>
+          {error && <p className="font-sans text-sm text-destructive">{error}</p>}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-lg border border-arya-gold/30 text-arya-text-muted font-sans text-sm hover:bg-arya-gold/10 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isPending}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-destructive text-white font-sans text-sm font-medium hover:bg-destructive/90 transition-colors disabled:opacity-60"
+            >
+              {isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
