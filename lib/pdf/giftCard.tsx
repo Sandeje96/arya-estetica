@@ -1,9 +1,7 @@
 /**
- * Componente React PDF para la gift card de Arya Estética.
- * Formato CR80 (tarjeta de crédito estándar): 85.6mm × 54mm.
- *
- * Se usa exclusivamente en el route handler /api/gift-cards/[code]/pdf
- * que corre en Node.js (no en Edge).
+ * Gift Card PDF — Arya Estética
+ * Formato CR80: 85.6mm × 54mm (242.64pt × 153.07pt)
+ * Fuente única: Times-Roman (built-in, sin dependencias de red)
  */
 
 import React from "react";
@@ -17,164 +15,187 @@ import {
 } from "@react-pdf/renderer";
 import { formatPrice } from "@/lib/formatting";
 
-// Usamos fuentes built-in de PDF (Times-Roman + Helvetica) para evitar
-// dependencias de red en el servidor que pueden causar timeouts en Railway.
-
-// ─── Colores Arya ─────────────────────────────────────────────────────────────
-const C = {
-  greenDark:  "#4A5D3A",
-  green:      "#6B7F4F",
-  greenSoft:  "#8A9B6E",
-  cream:      "#F1EFE0",
-  creamLight: "#F8F6EC",
-  gold:       "#B8A668",
-  goldSoft:   "#C8B97E",
-  text:       "#3D3D3D",
-  textMuted:  "#6B6B6B",
-};
+// ─── Colores ──────────────────────────────────────────────────────────────────
+const GREEN  = "#4A5D3A";
+const CREAM  = "#F1EFE0";
+const GOLD   = "#B8A668";
+const MUTED  = "#7A8A6A";
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   page: {
-    width:           "85.6mm",
-    height:          "54mm",
-    backgroundColor: C.cream,
-    padding:         "5mm",
+    width:           242.64,
+    height:          153.07,
+    backgroundColor: CREAM,
+    padding:         0,
+    fontFamily:      "Times-Roman",
     position:        "relative",
-    fontFamily:      "Helvetica",
   },
-  // Borde dorado
+
+  // Borde fino dorado
   border: {
-    position:        "absolute",
-    top:             "2mm",
-    left:            "2mm",
-    right:           "2mm",
-    bottom:          "2mm",
-    borderWidth:     0.5,
-    borderColor:     C.gold,
-    borderStyle:     "solid",
-    borderRadius:    2,
-  },
-  // Franja verde superior
-  headerBar: {
-    position:        "absolute",
-    top:             0,
-    left:            0,
-    right:           0,
-    height:          "14mm",
-    backgroundColor: C.greenDark,
-  },
-  // Área de contenido principal
-  content: {
-    position:  "absolute",
-    top:       "14mm",
-    left:      "5mm",
-    right:     "28mm",   // deja espacio para el QR
-    bottom:    "5mm",
-    flexDirection: "column",
-    gap: 2,
-  },
-  // QR en esquina inferior derecha
-  qrContainer: {
-    position: "absolute",
-    bottom:   "5mm",
-    right:    "4mm",
-    width:    "23mm",
-    height:   "23mm",
-    backgroundColor: C.creamLight,
-    padding: 1,
-    borderRadius: 2,
-    borderWidth: 0.5,
-    borderColor: C.gold,
+    position:    "absolute",
+    top:         4,
+    left:        4,
+    right:       4,
+    bottom:      4,
+    borderWidth: 0.6,
+    borderColor: GOLD,
     borderStyle: "solid",
   },
-  qrImage: {
-    width:  "100%",
-    height: "100%",
+
+  // Área principal con padding
+  inner: {
+    position: "absolute",
+    top:      10,
+    left:     12,
+    right:    12,
+    bottom:   10,
+    flexDirection: "column",
   },
-  // Textos en el header
-  brandName: {
-    position:   "absolute",
-    top:        "3.5mm",
-    left:       "5mm",
+
+  // ── Título GIFT CARD ────────────────────────────────────────────────────────
+  title: {
+    fontFamily:    "Times-Roman",
+    fontSize:      28,
+    color:         GREEN,
+    letterSpacing: 6,
+    textAlign:     "center",
+    marginBottom:  4,
+  },
+
+  // Línea dorada separadora bajo el título
+  titleDivider: {
+    height:          0.6,
+    backgroundColor: GOLD,
+    marginBottom:    8,
+  },
+
+  // ── Campos DE / PARA / SERVICIO ─────────────────────────────────────────────
+  fieldsBlock: {
+    flexDirection: "column",
+    gap:           3,
+    flex:          1,
+  },
+
+  fieldRow: {
+    flexDirection:  "row",
+    alignItems:     "flex-end",
+    gap:            4,
+  },
+
+  fieldLabel: {
+    fontFamily:    "Times-Roman",
+    fontSize:      7,
+    color:         GREEN,
+    letterSpacing: 1.5,
+    minWidth:      40,
+    paddingBottom: 1,
+  },
+
+  fieldValue: {
     fontFamily: "Times-Roman",
-    fontSize:   14,
-    color:      C.cream,
+    fontSize:   8,
+    color:      GREEN,
+    flex:       1,
+    borderBottomWidth: 0.5,
+    borderBottomColor: MUTED,
+    borderBottomStyle: "solid",
+    paddingBottom: 1,
+  },
+
+  fieldValueEmpty: {
+    fontFamily: "Times-Roman",
+    fontSize:   8,
+    color:      CREAM,  // invisible — solo sirve para mantener el underline
+    flex:       1,
+    borderBottomWidth: 0.5,
+    borderBottomColor: MUTED,
+    borderBottomStyle: "solid",
+    paddingBottom: 1,
+  },
+
+  // ── Precio ──────────────────────────────────────────────────────────────────
+  priceRow: {
+    flexDirection:  "row",
+    justifyContent: "flex-end",
+    alignItems:     "center",
+    gap:            4,
+    marginTop:      3,
+  },
+
+  priceLabel: {
+    fontFamily:    "Times-Roman",
+    fontSize:      6,
+    color:         MUTED,
     letterSpacing: 1,
   },
-  giftCardLabel: {
-    position:   "absolute",
-    top:        "8mm",
-    left:       "5mm",
+
+  priceValue: {
     fontFamily: "Times-Roman",
-    fontWeight: 600,
-    fontSize:   7,
-    color:      C.gold,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  // Destinataria
-  paraLabel: {
-    fontSize:  5.5,
-    color:     C.textMuted,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-    marginTop: 4,
-  },
-  recipientName: {
-    fontFamily: "Times-Roman",
-    fontWeight: 600,
     fontSize:   11,
-    color:      C.greenDark,
-    marginTop:  1,
+    color:      GREEN,
   },
-  // Servicios
-  serviceItem: {
-    fontSize:  5.5,
-    color:     C.text,
-    marginTop: 2,
-    paddingLeft: 4,
-  },
-  serviceItemBullet: {
-    fontSize: 5.5,
-    color:    C.goldSoft,
-  },
-  // Total
-  totalRow: {
-    flexDirection: "row",
-    alignItems:    "center",
-    gap:           4,
-    marginTop:     "auto",
-    paddingTop:    2,
-    borderTopWidth: 0.4,
-    borderTopColor: C.gold,
+
+  // ── Pie ─────────────────────────────────────────────────────────────────────
+  footer: {
+    flexDirection:  "row",
+    alignItems:     "flex-end",
+    justifyContent: "space-between",
+    marginTop:      5,
+    paddingTop:     4,
+    borderTopWidth: 0.5,
+    borderTopColor: GOLD,
     borderTopStyle: "solid",
   },
-  totalLabel: {
-    fontSize: 5,
-    color:    C.textMuted,
-    flex:     1,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+
+  // Contacto izquierda
+  contactBlock: {
+    flexDirection: "column",
+    gap:           1.5,
   },
-  totalAmount: {
+
+  contactLine: {
     fontFamily: "Times-Roman",
-    fontWeight: 600,
-    fontSize:   10,
-    color:      C.greenDark,
+    fontSize:   5,
+    color:      MUTED,
   },
-  // Datos de contacto (pie)
-  contactRow: {
-    position:  "absolute",
-    bottom:    "2.5mm",
-    left:      "5mm",
-    right:     "28mm",
-    flexDirection: "row",
-    gap:       6,
+
+  // Marca derecha
+  brandBlock: {
+    flexDirection: "column",
+    alignItems:    "flex-end",
+    gap:           1,
   },
-  contactText: {
-    fontSize: 4.5,
-    color:    C.textMuted,
+
+  brandName: {
+    fontFamily:    "Times-Roman",
+    fontSize:      12,
+    color:         GREEN,
+    letterSpacing: 2,
+  },
+
+  brandSub: {
+    fontFamily:    "Times-Roman",
+    fontSize:      6,
+    color:         MUTED,
+    letterSpacing: 3,
+  },
+
+  // QR pequeño (cuando cabe)
+  qrBox: {
+    width:           28,
+    height:          28,
+    borderWidth:     0.4,
+    borderColor:     GOLD,
+    borderStyle:     "solid",
+    padding:         1,
+    backgroundColor: CREAM,
+    marginLeft:      6,
+  },
+  qrImg: {
+    width:  "100%",
+    height: "100%",
   },
 });
 
@@ -182,69 +203,82 @@ const s = StyleSheet.create({
 
 export interface GiftCardPDFProps {
   recipientName: string;
-  services: Array<{ name: string; priceAtPurchase: number }>;
-  totalAmount: number;
-  qrDataUrl: string;  // PNG data URL generado por lib/qr.ts
+  buyerName:     string;
+  services:      Array<{ name: string; priceAtPurchase: number }>;
+  totalAmount:   number;
+  qrDataUrl:     string;
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export function GiftCardPDF({
   recipientName,
+  buyerName,
   services,
   totalAmount,
   qrDataUrl,
 }: GiftCardPDFProps) {
-  // Limitar a 4 servicios para que entren en el espacio disponible
-  const visibleServices = services.slice(0, 4);
-  const extra = services.length - visibleServices.length;
+  // Resumir servicios en una línea (máx ~60 caracteres)
+  const serviceLine = services.map((s) => s.name).join(" · ");
+  const serviceDisplay =
+    serviceLine.length > 58
+      ? serviceLine.slice(0, 55) + "…"
+      : serviceLine;
 
   return (
     <Document title="Gift Card — Arya Estética">
       <Page size={[242.64, 153.07]} style={s.page}>
-        {/* Franja verde */}
-        <View style={s.headerBar} />
 
         {/* Borde dorado */}
         <View style={s.border} />
 
-        {/* Marca en header */}
-        <Text style={s.brandName}>ARYA estética</Text>
-        <Text style={s.giftCardLabel}>Gift Card</Text>
+        <View style={s.inner}>
 
-        {/* Contenido central */}
-        <View style={s.content}>
-          <Text style={s.paraLabel}>Para</Text>
-          <Text style={s.recipientName}>{recipientName}</Text>
+          {/* Título */}
+          <Text style={s.title}>GIFT CARD</Text>
+          <View style={s.titleDivider} />
 
-          {visibleServices.map((srv, i) => (
-            <View key={i} style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={s.serviceItemBullet}>• </Text>
-              <Text style={s.serviceItem}>{srv.name}</Text>
+          {/* Campos */}
+          <View style={s.fieldsBlock}>
+            <View style={s.fieldRow}>
+              <Text style={s.fieldLabel}>DE:</Text>
+              <Text style={s.fieldValue}>{buyerName}</Text>
             </View>
-          ))}
-
-          {extra > 0 && (
-            <Text style={{ ...s.serviceItem, color: C.textMuted }}>
-              + {extra} servicio{extra > 1 ? "s" : ""} más
-            </Text>
-          )}
-
-          <View style={s.totalRow}>
-            <Text style={s.totalLabel}>Valor total</Text>
-            <Text style={s.totalAmount}>{formatPrice(totalAmount)}</Text>
+            <View style={s.fieldRow}>
+              <Text style={s.fieldLabel}>PARA:</Text>
+              <Text style={s.fieldValue}>{recipientName}</Text>
+            </View>
+            <View style={s.fieldRow}>
+              <Text style={s.fieldLabel}>SERVICIO:</Text>
+              <Text style={s.fieldValue}>{serviceDisplay}</Text>
+            </View>
           </View>
-        </View>
 
-        {/* QR */}
-        <View style={s.qrContainer}>
-          <Image src={qrDataUrl} style={s.qrImage} />
-        </View>
+          {/* Precio */}
+          <View style={s.priceRow}>
+            <Text style={s.priceLabel}>VALOR TOTAL</Text>
+            <Text style={s.priceValue}>{formatPrice(totalAmount)}</Text>
+          </View>
 
-        {/* Contacto */}
-        <View style={s.contactRow}>
-          <Text style={s.contactText}>Edif. Puerta Real, Dpto 12 E, Villa Sarita</Text>
-          <Text style={s.contactText}>@arya_estetica</Text>
+          {/* Pie: contacto | marca + QR */}
+          <View style={s.footer}>
+            <View style={s.contactBlock}>
+              <Text style={s.contactLine}>✆  +54 9 3764-285491</Text>
+              <Text style={s.contactLine}>◎  @arya_estetica</Text>
+              <Text style={s.contactLine}>⌖  Edif. Puerta Real, Dpto 12 E, Villa Sarita. Posadas.</Text>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
+              <View style={s.brandBlock}>
+                <Text style={s.brandName}>ARYA</Text>
+                <Text style={s.brandSub}>e s t é t i c a</Text>
+              </View>
+              <View style={s.qrBox}>
+                <Image src={qrDataUrl} style={s.qrImg} />
+              </View>
+            </View>
+          </View>
+
         </View>
       </Page>
     </Document>

@@ -23,6 +23,7 @@ export async function GET(
   const giftCard = await db.giftCard.findUnique({
     where: { code },
     include: {
+      buyer: { select: { firstName: true, lastName: true } },
       items: {
         include: { service: { select: { name: true } } },
       },
@@ -46,6 +47,7 @@ export async function GET(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const element = React.createElement(GiftCardPDF, {
     recipientName: giftCard.recipientName,
+    buyerName:     `${giftCard.buyer.firstName} ${giftCard.buyer.lastName}`,
     services,
     totalAmount:   giftCard.totalAmount,
     qrDataUrl,
