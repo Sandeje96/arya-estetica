@@ -37,7 +37,7 @@ export function ConfirmModal({ appointment, onClose, onSuccess }: ConfirmModalPr
       const res = await fetch(`/api/appointments/${appointment.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "confirm", scheduledAt, notes }),
+        body: JSON.stringify({ action: "confirm", scheduledAt: new Date(scheduledAt).toISOString(), notes }),
       });
       if (!res.ok) {
         const d = await res.json();

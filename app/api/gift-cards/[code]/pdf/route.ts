@@ -51,8 +51,14 @@ export async function GET(
     qrDataUrl,
   }) as any;
 
-  const pdfBuffer = await renderToBuffer(element);
-  // Convertir Buffer a Uint8Array para que Response lo acepte
+  let pdfBuffer: Buffer;
+  try {
+    pdfBuffer = await renderToBuffer(element);
+  } catch (err) {
+    console.error("[PDF] Error generando PDF gift card:", err);
+    return NextResponse.json({ error: "Error generando el PDF" }, { status: 500 });
+  }
+
   const body = new Uint8Array(pdfBuffer);
 
   return new Response(body, {

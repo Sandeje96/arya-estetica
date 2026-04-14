@@ -14,20 +14,11 @@ import {
   Text,
   Image,
   StyleSheet,
-  Font,
 } from "@react-pdf/renderer";
 import { formatPrice } from "@/lib/formatting";
 
-// ─── Tipografías ──────────────────────────────────────────────────────────────
-// Usamos fuentes embebidas para que el PDF sea portable.
-// Si no existen los archivos locales, @react-pdf usa Helvetica como fallback.
-Font.register({
-  family: "Cormorant",
-  fonts: [
-    { src: "https://fonts.gstatic.com/s/cormorantgaramond/v22/co3YmX5slCNuHLi8bLeY9MK7whWMhyjQAllvuQ.woff2", fontWeight: 400 },
-    { src: "https://fonts.gstatic.com/s/cormorantgaramond/v22/co3bmX5slCNuHLi8bLeY9MK7whWMhyjQEl5fpw.woff2", fontWeight: 600 },
-  ],
-});
+// Usamos fuentes built-in de PDF (Times-Roman + Helvetica) para evitar
+// dependencias de red en el servidor que pueden causar timeouts en Railway.
 
 // ─── Colores Arya ─────────────────────────────────────────────────────────────
 const C = {
@@ -106,7 +97,7 @@ const s = StyleSheet.create({
     position:   "absolute",
     top:        "3.5mm",
     left:       "5mm",
-    fontFamily: "Cormorant",
+    fontFamily: "Times-Roman",
     fontSize:   14,
     color:      C.cream,
     letterSpacing: 1,
@@ -115,7 +106,7 @@ const s = StyleSheet.create({
     position:   "absolute",
     top:        "8mm",
     left:       "5mm",
-    fontFamily: "Cormorant",
+    fontFamily: "Times-Roman",
     fontWeight: 600,
     fontSize:   7,
     color:      C.gold,
@@ -131,7 +122,7 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   recipientName: {
-    fontFamily: "Cormorant",
+    fontFamily: "Times-Roman",
     fontWeight: 600,
     fontSize:   11,
     color:      C.greenDark,
@@ -167,7 +158,7 @@ const s = StyleSheet.create({
     letterSpacing: 0.5,
   },
   totalAmount: {
-    fontFamily: "Cormorant",
+    fontFamily: "Times-Roman",
     fontWeight: 600,
     fontSize:   10,
     color:      C.greenDark,
