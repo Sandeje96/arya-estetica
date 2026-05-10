@@ -160,9 +160,9 @@ export async function PATCH(
 
     // ── Reprogramar ──────────────────────────────────────────────────────────
     if (data.action === "reschedule") {
-      if (appointment.status !== "CONFIRMED") {
+      if (appointment.status === "CANCELLED") {
         return NextResponse.json(
-          { error: "Solo se pueden reprogramar turnos confirmados" },
+          { error: "No se puede reprogramar un turno cancelado" },
           { status: 409 }
         );
       }

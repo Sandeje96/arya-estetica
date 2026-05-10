@@ -161,16 +161,18 @@ function AppointmentRow({
                 <span className="hidden sm:inline">Confirmar</span>
               </button>
             )}
+            {(appt.status === "CONFIRMED" || appt.status === "COMPLETED") && (
+              <button
+                onClick={() => onAction({ type: "reschedule", appointment: appt })}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-arya-gold/30 text-arya-text-muted text-xs font-sans hover:bg-arya-gold/10 transition-colors"
+                title="Editar fecha"
+              >
+                <CalendarClock size={12} aria-hidden />
+                <span className="hidden lg:inline">Fecha</span>
+              </button>
+            )}
             {appt.status === "CONFIRMED" && (
               <>
-                <button
-                  onClick={() => onAction({ type: "reschedule", appointment: appt })}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-arya-gold/30 text-arya-text-muted text-xs font-sans hover:bg-arya-gold/10 transition-colors"
-                  title="Reprogramar turno"
-                >
-                  <CalendarClock size={12} aria-hidden />
-                  <span className="hidden lg:inline">Reprogramar</span>
-                </button>
                 <a
                   href={reminderLink}
                   target="_blank"
@@ -191,6 +193,7 @@ function AppointmentRow({
                 </button>
               </>
             )}
+
             {(appt.status === "PENDING" || appt.status === "CONFIRMED") && (
               <button
                 onClick={() => onAction({ type: "cancel", appointment: appt })}
