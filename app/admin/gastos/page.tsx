@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { GastosClient, type ExpenseRow } from "@/components/admin/GastosClient";
+import { getBillingPeriod, currentBillingMonth, billingPeriodLabel } from "@/lib/dates";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -12,8 +13,7 @@ interface PageProps {
 }
 
 async function getExpenses(year: number, month: number) {
-  const from = new Date(year, month, 1);
-  const to   = new Date(year, month + 1, 0, 23, 59, 59);
+  const { from, to } = getBillingPeriod(year, month);
 
   try {
     const rows = await db.expense.findMany({
@@ -35,21 +35,19 @@ async function getExpenses(year: number, month: number) {
 }
 
 export default async function GastosPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const now    = new Date();
-  const year   = parseInt(params.year  ?? String(now.getFullYear()), 10);
-  const month  = parseInt(params.month ?? String(now.getMonth()), 10);
+  const params   = await searchParams;
+  const billing  = currentBillingMonth();
+  const year     = parseInt(params.year  ?? String(billing.year),  10);
+  const month    = parseInt(params.month ?? String(billing.month), 10);
 
-  const expenses = await getExpenses(year, month);
+  const expenses   = await getExpenses(year, month);
   const totalMonth = expenses.reduce((s, e) => s + e.amount, 0);
-  const currentMonth = format(new Date(year, month, 1), "MMMM yyyy", { locale: es });
-  // Capitalizar primera letra
-  const currentMonthLabel = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
+  const periodLabel = billingPeriodLabel(year, month);
 
-  // Navegación entre meses
-  const prevDate  = new Date(year, month - 1, 1);
-  const nextDate  = new Date(year, month + 1, 1);
-  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  // Navegación entre períodos
+  const prevDate       = new Date(year, month - 1, 10);
+  const nextDate       = new Date(year, month + 1, 10);
+  const isCurrentMonth = year === billing.year && month === billing.month;
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,24 +59,20 @@ export default async function GastosPage({ searchParams }: PageProps) {
           </p>
         </div>
 
-        {/* Navegación de mes */}
+        {/* Navegación de período */}
         <div className="flex items-center gap-2">
           <a
             href={`?year=${prevDate.getFullYear()}&month=${prevDate.getMonth()}`}
             className="px-3 py-1.5 rounded-lg border border-arya-gold/30 text-arya-text-muted font-sans text-xs hover:bg-arya-gold/10 transition-colors"
-          >
-            ←
-          </a>
-          <span className="font-sans text-sm font-medium text-arya-text px-2 min-w-32 text-center capitalize">
-            {currentMonthLabel}
+          >←</a>
+          <span className="font-sans text-sm font-medium text-arya-text px-2 min-w-40 text-center">
+            {periodLabel}
           </span>
           {!isCurrentMonth && (
             <a
               href={`?year=${nextDate.getFullYear()}&month=${nextDate.getMonth()}`}
               className="px-3 py-1.5 rounded-lg border border-arya-gold/30 text-arya-text-muted font-sans text-xs hover:bg-arya-gold/10 transition-colors"
-            >
-              →
-            </a>
+            >→</a>
           )}
         </div>
       </div>
@@ -86,7 +80,7 @@ export default async function GastosPage({ searchParams }: PageProps) {
       <GastosClient
         expenses={expenses}
         totalMonth={totalMonth}
-        currentMonth={currentMonthLabel}
+        currentMonth={periodLabel}
       />
     </div>
   );

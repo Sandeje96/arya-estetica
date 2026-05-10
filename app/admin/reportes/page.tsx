@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { getAllReportData } from "@/lib/reports";
 import { formatPrice } from "@/lib/formatting";
+import { currentBillingMonth, billingPeriodLabel } from "@/lib/dates";
 import { MonthlyBarChart }  from "@/components/admin/charts/MonthlyBarChart";
 import { CategoryBarChart } from "@/components/admin/charts/CategoryBarChart";
 import { ClientPieChart }   from "@/components/admin/charts/ClientPieChart";
 import { HeatmapChart }     from "@/components/admin/charts/HeatmapChart";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { TrendingUp, Award, Users, XCircle, Clock } from "lucide-react";
+import { TrendingUp, Award, Users, XCircle } from "lucide-react";
 
 export const metadata: Metadata = { title: "Reportes · Admin" };
 export const dynamic = "force-dynamic";
@@ -43,17 +42,17 @@ function ReportCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function ReportesPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const now    = new Date();
-  const year   = parseInt(params.year  ?? String(now.getFullYear()), 10);
-  const month  = parseInt(params.month ?? String(now.getMonth()),    10);
+  const params   = await searchParams;
+  const billing  = currentBillingMonth();
+  const year     = parseInt(params.year  ?? String(billing.year),  10);
+  const month    = parseInt(params.month ?? String(billing.month), 10);
 
   const data = await getAllReportData(year, month);
 
-  const monthLabel = format(new Date(year, month, 1), "MMMM yyyy", { locale: es });
-  const prevDate   = new Date(year, month - 1, 1);
-  const nextDate   = new Date(year, month + 1, 1);
-  const isCurrent  = year === now.getFullYear() && month === now.getMonth();
+  const monthLabel = billingPeriodLabel(year, month);
+  const prevDate   = new Date(year, month - 1, 10);
+  const nextDate   = new Date(year, month + 1, 10);
+  const isCurrent  = year === billing.year && month === billing.month;
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,7 +71,7 @@ export default async function ReportesPage({ searchParams }: PageProps) {
             href={`?year=${prevDate.getFullYear()}&month=${prevDate.getMonth()}`}
             className="px-3 py-1.5 rounded-lg border border-arya-gold/30 text-arya-text-muted font-sans text-xs hover:bg-arya-gold/10 transition-colors"
           >←</a>
-          <span className="font-sans text-sm font-medium text-arya-text min-w-32 text-center capitalize">
+          <span className="font-sans text-sm font-medium text-arya-text min-w-44 text-center">
             {monthLabel}
           </span>
           {!isCurrent && (
@@ -120,7 +119,7 @@ export default async function ReportesPage({ searchParams }: PageProps) {
             <p className="font-heading text-xl font-light text-arya-green-dark">
               {data.clientSegment.find((s) => s.label === "Recurrentes")?.value ?? 0}
             </p>
-            <p className="font-sans text-[11px] text-arya-text-muted capitalize">este {monthLabel}</p>
+            <p className="font-sans text-[11px] text-arya-text-muted capitalize">este período</p>
           </div>
         </div>
 
@@ -132,7 +131,7 @@ export default async function ReportesPage({ searchParams }: PageProps) {
             <p className="font-heading text-xl font-light text-arya-green-dark truncate">
               {formatPrice(data.monthly[data.monthly.length - 1]?.ingresos ?? 0)}
             </p>
-            <p className="font-sans text-[11px] text-arya-text-muted capitalize">este {monthLabel}</p>
+            <p className="font-sans text-[11px] text-arya-text-muted capitalize">este período</p>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/formatting";
-import { formatTimeAR } from "@/lib/dates";
+import { formatTimeAR, getBillingPeriod, currentBillingMonth, billingPeriodLabel } from "@/lib/dates";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -24,8 +24,7 @@ interface PageProps {
 // ─── Datos ────────────────────────────────────────────────────────────────────
 
 async function getFinanceData(year: number, month: number) {
-  const from = new Date(year, month, 1);
-  const to   = new Date(year, month + 1, 0, 23, 59, 59);
+  const { from, to } = getBillingPeriod(year, month);
 
   const [appointments, giftCards, expenses] = await Promise.all([
     // Turnos completados del mes
@@ -89,10 +88,10 @@ async function getFinanceData(year: number, month: number) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function FinanzasPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const now    = new Date();
-  const year   = parseInt(params.year  ?? String(now.getFullYear()), 10);
-  const month  = parseInt(params.month ?? String(now.getMonth()),    10);
+  const params   = await searchParams;
+  const billing  = currentBillingMonth();
+  const year     = parseInt(params.year  ?? String(billing.year),  10);
+  const month    = parseInt(params.month ?? String(billing.month), 10);
 
   let data;
   try {
@@ -106,11 +105,10 @@ export default async function FinanzasPage({ searchParams }: PageProps) {
     );
   }
 
-  const monthLabel = format(new Date(year, month, 1), "MMMM yyyy", { locale: es });
-  const monthLabelCap = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-  const prevDate   = new Date(year, month - 1, 1);
-  const nextDate   = new Date(year, month + 1, 1);
-  const isCurrent  = year === now.getFullYear() && month === now.getMonth();
+  const monthLabelCap  = billingPeriodLabel(year, month);
+  const prevDate       = new Date(year, month - 1, 10);
+  const nextDate       = new Date(year, month + 1, 10);
+  const isCurrent      = year === billing.year && month === billing.month;
 
   const isPositive = data.balance >= 0;
 
@@ -130,7 +128,7 @@ export default async function FinanzasPage({ searchParams }: PageProps) {
             href={`?year=${prevDate.getFullYear()}&month=${prevDate.getMonth()}`}
             className="px-3 py-1.5 rounded-lg border border-arya-gold/30 text-arya-text-muted font-sans text-xs hover:bg-arya-gold/10 transition-colors"
           >←</Link>
-          <span className="font-sans text-sm font-medium text-arya-text min-w-32 text-center capitalize">
+          <span className="font-sans text-sm font-medium text-arya-text px-1 min-w-44 text-center">
             {monthLabelCap}
           </span>
           {!isCurrent && (

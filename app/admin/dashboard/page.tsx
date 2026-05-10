@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import { RemindersWidget, type PendingReminder } from "@/components/admin/RemindersWidget";
 import { formatPrice } from "@/lib/formatting";
-import { formatTimeAR, formatDateShortAR, isTodayAR } from "@/lib/dates";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, format } from "date-fns";
+import { formatTimeAR, formatDateShortAR, isTodayAR, getBillingPeriod, currentBillingMonth, billingPeriodLabel } from "@/lib/dates";
+import { startOfWeek, endOfWeek, addDays, format } from "date-fns";
 import { es } from "date-fns/locale";
 
 export const metadata: Metadata = { title: "Dashboard · Admin" };
@@ -23,11 +23,10 @@ const WINDOW_HOURS_MAX =  4 * 60 * 60 * 1000;
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
-async function getStats(now: Date) {
-  const weekStart  = startOfWeek(now, { weekStartsOn: 1 });
-  const weekEnd    = endOfWeek(now,   { weekStartsOn: 1 });
-  const monthStart = startOfMonth(now);
-  const monthEnd   = endOfMonth(now);
+async function getStats(now: Date, billingYear: number, billingMonth: number) {
+  const weekStart        = startOfWeek(now, { weekStartsOn: 1 });
+  const weekEnd          = endOfWeek(now,   { weekStartsOn: 1 });
+  const { from, to }     = getBillingPeriod(billingYear, billingMonth);
 
   try {
     const [pendingCount, weekCount, clientCount, monthlyIncome, monthlyExpenses, pendingGiftCards] =
@@ -42,11 +41,11 @@ async function getStats(now: Date) {
         db.client.count({ where: { appointments: { some: {} } } }),
         db.appointment.aggregate({
           _sum: { totalCharged: true },
-          where: { status: "COMPLETED", scheduledAt: { gte: monthStart, lte: monthEnd } },
+          where: { status: "COMPLETED", scheduledAt: { gte: from, lte: to } },
         }),
         db.expense.aggregate({
           _sum: { amount: true },
-          where: { date: { gte: monthStart, lte: monthEnd } },
+          where: { date: { gte: from, lte: to } },
         }),
         db.giftCard.count({ where: { status: "PENDING_PICKUP" } }),
       ]);
@@ -138,12 +137,21 @@ async function getUpcomingAppointments(now: Date) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function DashboardPage() {
-  const now = new Date();
+interface PageProps {
+  searchParams: Promise<{ year?: string; month?: string }>;
+}
+
+export default async function DashboardPage({ searchParams }: PageProps) {
+  const params   = await searchParams;
+  const now      = new Date();
+  const billing  = currentBillingMonth();
+  const year     = parseInt(params.year  ?? String(billing.year),  10);
+  const month    = parseInt(params.month ?? String(billing.month), 10);
+  const isCurrent = year === billing.year && month === billing.month;
 
   const [session, stats, reminders, upcomingRaw] = await Promise.all([
     auth(),
-    getStats(now),
+    getStats(now, year, month),
     getPendingReminders(now),
     getUpcomingAppointments(now),
   ]);
@@ -161,7 +169,9 @@ export default async function DashboardPage() {
     timeLabel: formatTimeAR(a.scheduledAt!),
   }));
 
-  const monthLabel = format(now, "MMMM yyyy", { locale: es });
+  const periodLabel = billingPeriodLabel(year, month);
+  const prevDate    = new Date(year, month - 1, 10);
+  const nextDate    = new Date(year, month + 1, 10);
 
   // Porcentaje de gastos sobre ingresos (para barra visual)
   const expensePct = stats.monthlyIncome > 0
@@ -175,22 +185,42 @@ export default async function DashboardPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-heading text-3xl font-light text-arya-green-dark">
-            Bienvenida{session?.user?.name ? `, ${session.user.name}` : ""} 🌿
+            {isCurrent ? <>Bienvenida{session?.user?.name ? `, ${session.user.name}` : ""} 🌿</> : "Dashboard"}
           </h1>
           <p className="font-sans text-sm text-arya-text-muted mt-1 capitalize">
-            {format(now, "EEEE d 'de' MMMM yyyy", { locale: es })}
+            {isCurrent
+              ? format(now, "EEEE d 'de' MMMM yyyy", { locale: es })
+              : periodLabel}
           </p>
         </div>
-        {stats.pendingCount > 0 && (
-          <Link
-            href="/admin/turnos"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-arya-gold/15 border border-arya-gold/30 text-amber-700 font-sans text-sm font-medium hover:bg-arya-gold/25 transition-colors"
-          >
-            <Clock size={15} aria-hidden />
-            {stats.pendingCount} turno{stats.pendingCount !== 1 ? "s" : ""} pendiente{stats.pendingCount !== 1 ? "s" : ""}
-            <ArrowRight size={13} aria-hidden />
-          </Link>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {stats.pendingCount > 0 && isCurrent && (
+            <Link
+              href="/admin/turnos"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-arya-gold/15 border border-arya-gold/30 text-amber-700 font-sans text-sm font-medium hover:bg-arya-gold/25 transition-colors"
+            >
+              <Clock size={15} aria-hidden />
+              {stats.pendingCount} turno{stats.pendingCount !== 1 ? "s" : ""} pendiente{stats.pendingCount !== 1 ? "s" : ""}
+              <ArrowRight size={13} aria-hidden />
+            </Link>
+          )}
+          {/* Navegación de período */}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`?year=${prevDate.getFullYear()}&month=${prevDate.getMonth()}`}
+              className="px-3 py-1.5 rounded-lg border border-arya-gold/30 text-arya-text-muted font-sans text-xs hover:bg-arya-gold/10 transition-colors"
+            >←</Link>
+            <span className="font-sans text-xs font-medium text-arya-text px-1 min-w-44 text-center">
+              {periodLabel}
+            </span>
+            {!isCurrent && (
+              <Link
+                href={`?year=${nextDate.getFullYear()}&month=${nextDate.getMonth()}`}
+                className="px-3 py-1.5 rounded-lg border border-arya-gold/30 text-arya-text-muted font-sans text-xs hover:bg-arya-gold/10 transition-colors"
+              >→</Link>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Stats principales ──────────────────────────────────────────────── */}
@@ -199,7 +229,7 @@ export default async function DashboardPage() {
           { label: "Pendientes",       value: stats.pendingCount.toString(),                          icon: Clock,       color: "text-arya-gold",       bg: "bg-arya-gold/10",       href: "/admin/turnos?status=PENDING" },
           { label: "Esta semana",      value: stats.weekCount.toString(),                             icon: CalendarDays,color: "text-arya-green",       bg: "bg-arya-green/10",      href: "/admin/calendario" },
           { label: "Clientes",         value: stats.clientCount.toString(),                           icon: Users,       color: "text-arya-green-dark",  bg: "bg-arya-green-dark/10", href: "/admin/turnos" },
-          { label: `Ingresos ${format(now,"MMM",{locale:es})}`, value: formatPrice(stats.monthlyIncome), icon: TrendingUp,  color: "text-arya-gold",       bg: "bg-arya-gold/10",       href: "/admin/finanzas" },
+          { label: "Ingresos período", value: formatPrice(stats.monthlyIncome), icon: TrendingUp,  color: "text-arya-gold",       bg: "bg-arya-gold/10",       href: "/admin/finanzas" },
         ] as const).map((stat) => (
           <Link
             key={stat.label}
@@ -222,8 +252,8 @@ export default async function DashboardPage() {
       {/* ── Balance del mes ────────────────────────────────────────────────── */}
       <section className="rounded-xl border border-arya-gold/20 bg-arya-cream-light overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-arya-gold/10">
-          <h2 className="font-heading text-lg font-light text-arya-green-dark capitalize">
-            Balance · {monthLabel}
+          <h2 className="font-heading text-lg font-light text-arya-green-dark">
+            Balance · {periodLabel}
           </h2>
           <Link
             href="/admin/finanzas"

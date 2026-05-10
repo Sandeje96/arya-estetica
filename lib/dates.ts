@@ -45,3 +45,40 @@ export function formatDateLongAR(date: Date): string {
     month:    "long",
   }).format(date);
 }
+
+// ─── Período de facturación (10 de cada mes → 9 del siguiente) ───────────────
+
+const MONTH_SHORT = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+/**
+ * Devuelve el período de facturación para un mes dado.
+ * month = 0-indexed (0=Enero). El período va del día 10 al día 9 del mes siguiente.
+ */
+export function getBillingPeriod(year: number, month: number): { from: Date; to: Date } {
+  return {
+    from: new Date(year, month,     10,  0,  0,  0),
+    to:   new Date(year, month + 1,  9, 23, 59, 59),
+  };
+}
+
+/**
+ * Devuelve el año y mes (0-indexed) del período de facturación actual.
+ * Si hoy es el 10 o posterior, el período es este mes. Si es antes del 10, es el mes anterior.
+ */
+export function currentBillingMonth(): { year: number; month: number } {
+  const now = new Date();
+  if (now.getDate() >= 10) {
+    return { year: now.getFullYear(), month: now.getMonth() };
+  }
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 10);
+  return { year: prev.getFullYear(), month: prev.getMonth() };
+}
+
+/**
+ * Etiqueta legible del período — ej: "10 Abr — 9 May 2026"
+ */
+export function billingPeriodLabel(year: number, month: number): string {
+  const toMonth = month === 11 ? 0 : month + 1;
+  const toYear  = month === 11 ? year + 1 : year;
+  return `10 ${MONTH_SHORT[month]} — 9 ${MONTH_SHORT[toMonth]} ${toYear}`;
+}

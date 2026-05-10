@@ -4,6 +4,7 @@
  */
 import { db } from "@/lib/db";
 import { CATEGORY_LABELS } from "@/lib/categories";
+import { getBillingPeriod, currentBillingMonth } from "@/lib/dates";
 
 // ─── Tipos exportados ─────────────────────────────────────────────────────────
 
@@ -56,14 +57,13 @@ function monthKey(date: Date) {
 // ─── Ingresos vs gastos por mes (últimos 6 meses) ────────────────────────────
 
 export async function getMonthlyBarData(): Promise<MonthlyBarData[]> {
-  const now   = new Date();
+  const billing = currentBillingMonth();
   const months: MonthlyBarData[] = [];
 
-  // Construir las 6 ventanas de mes
+  // Construir las 6 ventanas de período de facturación
   for (let i = 5; i >= 0; i--) {
-    const d    = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const from = new Date(d.getFullYear(), d.getMonth(), 1);
-    const to   = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+    const d            = new Date(billing.year, billing.month - i, 10);
+    const { from, to } = getBillingPeriod(d.getFullYear(), d.getMonth());
 
     const [incomeAgg, expenseAgg] = await Promise.all([
       db.appointment.aggregate({
@@ -93,8 +93,7 @@ export async function getMonthlyBarData(): Promise<MonthlyBarData[]> {
 // ─── Ingresos por categoría de servicio (mes actual) ─────────────────────────
 
 export async function getCategoryIncomeData(year: number, month: number): Promise<CategoryIncomeData[]> {
-  const from = new Date(year, month, 1);
-  const to   = new Date(year, month + 1, 0, 23, 59, 59);
+  const { from, to } = getBillingPeriod(year, month);
 
   const items = await db.appointmentItem.findMany({
     where: {
@@ -124,8 +123,7 @@ export async function getCategoryIncomeData(year: number, month: number): Promis
 // ─── Top 5 servicios más vendidos (mes actual) ───────────────────────────────
 
 export async function getTopServices(year: number, month: number): Promise<TopServiceData[]> {
-  const from = new Date(year, month, 1);
-  const to   = new Date(year, month + 1, 0, 23, 59, 59);
+  const { from, to } = getBillingPeriod(year, month);
 
   const items = await db.appointmentItem.findMany({
     where: {
@@ -176,8 +174,7 @@ export async function getCancellationData(): Promise<CancellationData> {
 // ─── Clientes nuevos vs recurrentes (mes actual) ─────────────────────────────
 
 export async function getClientSegmentData(year: number, month: number): Promise<ClientSegmentData[]> {
-  const from = new Date(year, month, 1);
-  const to   = new Date(year, month + 1, 0, 23, 59, 59);
+  const { from, to } = getBillingPeriod(year, month);
 
   // Clientes con turno completado en el mes
   const appts = await db.appointment.findMany({
