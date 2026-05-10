@@ -15,6 +15,7 @@ import {
   Trash2,
   Loader2,
   CalendarClock,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -23,6 +24,7 @@ import { ConfirmModal } from "./ConfirmModal";
 import { CompleteModal } from "./CompleteModal";
 import { CancelModal } from "./CancelModal";
 import { RescheduleModal } from "./RescheduleModal";
+import { NewAppointmentModal } from "./NewAppointmentModal";
 import { formatPrice } from "@/lib/formatting";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
@@ -250,6 +252,7 @@ export function TurnosClient({ appointments: initial }: { appointments: Appointm
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [modal, setModal] = useState<Modal>(null);
+  const [showNew, setShowNew] = useState(false);
   const [, startTransition] = useTransition();
 
   // Filtros
@@ -291,6 +294,17 @@ export function TurnosClient({ appointments: initial }: { appointments: Appointm
 
   return (
     <div className="flex flex-col gap-5">
+
+      {/* Botón nuevo turno */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowNew(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-arya-green-dark text-arya-cream font-sans text-sm font-medium hover:bg-arya-green transition-colors shadow-sm"
+        >
+          <Plus size={15} aria-hidden />
+          Nuevo turno
+        </button>
+      </div>
 
       {/* Filtros + búsqueda */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -381,6 +395,12 @@ export function TurnosClient({ appointments: initial }: { appointments: Appointm
       )}
 
       {/* Modales */}
+      {showNew && (
+        <NewAppointmentModal
+          onClose={() => setShowNew(false)}
+          onSuccess={() => { setShowNew(false); handleSuccess(); }}
+        />
+      )}
       {modal?.type === "confirm" && (
         <ConfirmModal
           appointment={modal.appointment}
