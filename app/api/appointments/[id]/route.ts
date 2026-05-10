@@ -26,10 +26,16 @@ const cancelSchema = z.object({
   action: z.literal("cancel"),
 });
 
+const rescheduleSchema = z.object({
+  action:      z.literal("reschedule"),
+  scheduledAt: z.string().datetime({ message: "Fecha inválida" }),
+});
+
 const patchSchema = z.discriminatedUnion("action", [
   confirmSchema,
   completeSchema,
   cancelSchema,
+  rescheduleSchema,
 ]);
 
 // ─── DELETE /api/appointments/[id] ───────────────────────────────────────────
@@ -146,6 +152,24 @@ export async function PATCH(
           status:       "COMPLETED",
           totalCharged: data.totalCharged,
         },
+        include: { client: true, items: { include: { service: true } } },
+      });
+
+      return NextResponse.json(updated);
+    }
+
+    // ── Reprogramar ──────────────────────────────────────────────────────────
+    if (data.action === "reschedule") {
+      if (appointment.status !== "CONFIRMED") {
+        return NextResponse.json(
+          { error: "Solo se pueden reprogramar turnos confirmados" },
+          { status: 409 }
+        );
+      }
+
+      const updated = await db.appointment.update({
+        where: { id },
+        data:  { scheduledAt: new Date(data.scheduledAt) },
         include: { client: true, items: { include: { service: true } } },
       });
 

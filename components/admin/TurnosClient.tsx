@@ -14,6 +14,7 @@ import {
   Clock,
   Trash2,
   Loader2,
+  CalendarClock,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -21,6 +22,7 @@ import { AppointmentStatusBadge } from "./AppointmentStatusBadge";
 import { ConfirmModal } from "./ConfirmModal";
 import { CompleteModal } from "./CompleteModal";
 import { CancelModal } from "./CancelModal";
+import { RescheduleModal } from "./RescheduleModal";
 import { formatPrice } from "@/lib/formatting";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
@@ -49,10 +51,11 @@ interface Appointment {
 }
 
 type Modal =
-  | { type: "confirm"; appointment: Appointment }
-  | { type: "complete"; appointment: Appointment }
-  | { type: "cancel"; appointment: Appointment }
-  | { type: "delete"; appointment: Appointment }
+  | { type: "confirm";     appointment: Appointment }
+  | { type: "complete";    appointment: Appointment }
+  | { type: "cancel";      appointment: Appointment }
+  | { type: "delete";      appointment: Appointment }
+  | { type: "reschedule";  appointment: Appointment }
   | null;
 
 const STATUS_LABELS: Record<string, string> = {
@@ -160,6 +163,14 @@ function AppointmentRow({
             )}
             {appt.status === "CONFIRMED" && (
               <>
+                <button
+                  onClick={() => onAction({ type: "reschedule", appointment: appt })}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-arya-gold/30 text-arya-text-muted text-xs font-sans hover:bg-arya-gold/10 transition-colors"
+                  title="Reprogramar turno"
+                >
+                  <CalendarClock size={12} aria-hidden />
+                  <span className="hidden lg:inline">Reprogramar</span>
+                </button>
                 <a
                   href={reminderLink}
                   target="_blank"
@@ -385,6 +396,13 @@ export function TurnosClient({ appointments: initial }: { appointments: Appointm
         <CancelModal
           appointmentId={modal.appointment.id}
           clientName={`${modal.appointment.client.firstName} ${modal.appointment.client.lastName}`}
+          onClose={() => setModal(null)}
+          onSuccess={handleSuccess}
+        />
+      )}
+      {modal?.type === "reschedule" && (
+        <RescheduleModal
+          appointment={modal.appointment}
           onClose={() => setModal(null)}
           onSuccess={handleSuccess}
         />
